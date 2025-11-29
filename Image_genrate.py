@@ -1,24 +1,12 @@
-import os
-import replicate
+import os, requests
 from dotenv import load_dotenv
 
 load_dotenv()
-os.environ["REPLICATE_API_TOKEN"] = os.getenv("IMAGE_API_KEY")
+API = os.getenv("access_key")
 
-try:
-    print("Using token:", os.getenv("IMAGE_API_KEY")[:10] + "********")
+def get_image(q):
+    r = requests.get(f"https://api.unsplash.com/search/photos?query={q}&client_id={API}&per_page=1").json()
+    return r["results"][0]["urls"]["regular"] if r.get("results") else None
 
-    image_prompt = "A futuristic AI robot working in a hospital, ultra modern, digital art"
-
-    image_url = replicate.run(
-        "black-forest-labs/flux-schnell",  # 🎯 Free & accessible
-        input={
-            "prompt": image_prompt
-        }
-    )
-
-    print("\n🖼️ Image Generated Successfully!")
-    print("📎 Image URL:", image_url[0])
-
-except Exception as e:
-    print("❌ Error generating image:", e)
+img_url = get_image("AI healthcare technology")
+print(img_url)
