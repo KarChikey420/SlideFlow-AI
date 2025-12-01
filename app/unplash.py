@@ -13,6 +13,7 @@ if not UNSPLASH_API_KEY:
 
 @tool("fetch_image_from_unsplash", return_direct=True)
 def fetch_image_from_unsplash(query: str) -> str:
+    """Fetch an image URL from Unsplash based on a search query."""
     try:
         url = (
             "https://api.unsplash.com/search/photos"
@@ -33,6 +34,3 @@ def fetch_image_from_unsplash(query: str) -> str:
 
     except requests.exceptions.RequestException as e:
         return f"Error fetching image: {str(e)}"
-
-
-

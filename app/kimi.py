@@ -29,6 +29,3 @@ def get_kimi_model(
 
 kimi_llm = get_kimi_model(max_tokens=1000)
 
-response = kimi_llm.invoke("Hello Kimi, just checking if you're working!")
-print(response.content)
-
