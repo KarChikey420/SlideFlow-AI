@@ -5,11 +5,36 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-@tool
+UNSPLASH_API_KEY = os.getenv("UNSPLASH_API_KEY") or os.getenv("access_key")
+
+if not UNSPLASH_API_KEY:
+    raise ValueError("Missing UNSPLASH_API_KEY in .env file")
+
+
+@tool("fetch_image_from_unsplash", return_direct=True)
 def fetch_image_from_unsplash(query: str) -> str:
-    """Fetch relevant image URL from Unsplash API using search query."""
-    url = f"https://api.unsplash.com/search/photos?query={query}&client_id={os.getenv('access_key')}&per_page=1"
-    response = requests.get(url).json()
-    if response.get("results"):
-        return response["results"][0]["urls"]["regular"]
-    return "No image found"
+    """
+    Fetch relevant image URL from Unsplash API using search query.
+    Returns the image URL or a fallback string.
+    """
+    try:
+        url = (
+            "https://api.unsplash.com/search/photos"
+            f"?query={query}&client_id={UNSPLASH_API_KEY}&per_page=1"
+        )
+
+        response = requests.get(url, timeout=7)
+        response.raise_for_status()  
+
+        data = response.json()
+        if data.get("results"):
+            return data["results"][0]["urls"]["regular"]
+
+        return "⚠️ No image found for this query."
+
+    except requests.exceptions.Timeout:
+        return "⚠️ Image fetch timeout from Unsplash API."
+
+    except requests.exceptions.RequestException as e:
+        return f"❌ Error fetching image: {str(e)}"
+
