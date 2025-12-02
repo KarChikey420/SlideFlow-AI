@@ -1,3 +1,62 @@
-{
-  "messages": [
-    
+[
+  {
+    "title": "The Future of Artificial Intelligence",
+    "bullets": [
+      "AI is rapidly evolving from narrow to more general applications",
+      "Current AI already powers search engines, recommendations, and automation",
+      "Machine learning and deep learning are advancing exponentially",
+      "Investment in AI research reached $150+ billion globally in 2023",
+      "The next decade will see AI become ubiquitous in society"
+    ],
+    "img_query": "artificial intelligence future technology",
+    "image_url": "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80"
+  },
+  {
+    "title": "AI in Everyday Life",
+    "bullets": [
+      "Smart homes will anticipate needs and optimize energy usage automatically",
+      "Personalized healthcare with AI diagnostics and treatment recommendations",
+      "Autonomous vehicles will transform transportation and reduce accidents",
+      "Virtual assistants will become indistinguishable from human conversation",
+      "AI-powered education will adapt to individual learning styles in real-time"
+    ],
+    "img_query": "AI smart home technology",
+    "image_url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80"
+  },
+  {
+    "title": "Workplace Transformation",
+    "bullets": [
+      "Automation will handle repetitive tasks, freeing humans for creative work",
+      "New job categories will emerge: AI trainers, ethicists, and explainability experts",
+      "Human-AI collaboration will become the standard in most professions",
+      "Reskilling and continuous learning will be essential for career survival",
+      "AI decision support will enhance human judgment in critical fields"
+    ],
+    "img_query": "AI robots workplace",
+    "image_url": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80"
+  },
+  {
+    "title": "Ethical Challenges and Considerations",
+    "bullets": [
+      "AI bias must be addressed to ensure fairness across all demographics",
+      "Privacy concerns grow as AI systems require massive amounts of data",
+      "Accountability frameworks needed when AI systems make mistakes",
+      "Transparency in AI decision-making processes is critical for trust",
+      "Global regulation and governance will shape responsible AI development"
+    ],
+    "img_query": "AI ethics technology",
+    "image_url": "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80"
+  },
+  {
+    "title": "Looking Ahead: 2030 and Beyond",
+    "bullets": [
+      "Artificial General Intelligence (AGI) may emerge within the next 20 years",
+      "AI will accelerate scientific discovery in medicine, climate, and materials",
+      "Global challenges like climate change will be tackled with AI optimization",
+      "Human augmentation through brain-computer interfaces could become reality",
+      "Societal adaptation will require new economic models and value systems"
+    ],
+    "img_query": "futuristic AI technology",
+    "image_url": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80"
+  }
+]
