@@ -18,13 +18,17 @@ def generate_full_presentation(topic: str, slide_count: int = 10):
     system_message = f"""
     You are an expert PPT generator. Be CONCISE.
 
-    You MUST:
-    - Generate EXACTLY {slide_count} slides.
-    - For each slide return:
+    You MUST follow these steps:
+    1. Generate EXACTLY {slide_count} slides with this structure:
        {{"title": "...", "bullets": ["1","2","3","4","5"], "img_query": "..."}}
-    - THEN, for each img_query, call fetch_image_from_unsplash.
-    - Add "image_url" to each slide JSON.
-    - Final output: JSON list of slides with image URLs.
+    
+    2. For EACH slide, you MUST call the fetch_image_from_unsplash tool with the img_query.
+    
+    3. After getting the image URL from the tool, replace "img_query" with "image_url" in that slide.
+    
+    4. Final output must be a JSON list where each slide has "image_url" (NOT "img_query").
+    
+    IMPORTANT: You must use the fetch_image_from_unsplash tool {slide_count} times, once for each slide.
     
     Keep responses SHORT to save tokens.
     """
@@ -32,222 +36,82 @@ def generate_full_presentation(topic: str, slide_count: int = 10):
     result = agent_executor.invoke({
         "messages": [
             ("system", system_message),
-            ("user", f"Create a presentation on: {topic}")
+            ("user", f"Create a presentation on: {topic}. You MUST fetch images using the tool for ALL {slide_count} slides.")
         ]
     })
-
+    
+    slides = extract_and_fix_slides(result)
+    
+    result['slides'] = slides
+    
     return result
 
-# from kimi import kimi_llm
-# from unplash import fetch_image_from_unsplash
-# import json
-# import re
 
-# try:
-#     from langchain.agents import create_react_agent
-# except ImportError:
-#     from langgraph.prebuilt import create_react_agent
-
-# tools = [fetch_image_from_unsplash]
-
-# agent_executor = create_react_agent(
-#     model=kimi_llm,
-#     tools=tools
-# )
-
-# def generate_full_presentation(topic: str, slide_count: int = 10):
-#     system_message = f"""You are an expert PPT generator.
-
-# CRITICAL INSTRUCTIONS:
-# 1. First, create {slide_count} slides with titles and bullet points
-# 2. Then call fetch_image_from_unsplash for EACH slide's img_query
-# 3. Finally, return the complete JSON with all image URLs included
-
-# Output format (return this exact JSON structure):
-# [
-#   {{
-#     "title": "Slide Title Here",
-#     "bullets": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
-#     "img_query": "search term for image",
-#     "image_url": "URL_FROM_TOOL"
-#   }},
-#   ...
-# ]
-
-# After calling all tools, YOU MUST return the final complete JSON array with all {slide_count} slides.
-# """
-    
-#     result = agent_executor.invoke({
-#         "messages": [
-#             ("system", system_message),
-#             ("user", f"Create a {slide_count}-slide presentation on: {topic}")
-#         ]
-#     })
-    
-#     return result
-
-# def extract_slides_from_messages(result):
-#     """
-#     Parse the agent messages to extract slides and match them with fetched images.
-#     """
-#     if not isinstance(result, dict) or "messages" not in result:
-#         return None
-    
-#     messages = result["messages"]
-    
-#     # Extract image URLs from ToolMessages
-#     image_urls = []
-#     for msg in messages:
-#         if hasattr(msg, '__class__') and msg.__class__.__name__ == 'ToolMessage':
-#             if hasattr(msg, 'content'):
-#                 image_urls.append(msg.content)
-    
-#     # Try to find AI message with JSON
-#     for msg in reversed(messages):
-#         if hasattr(msg, '__class__') and msg.__class__.__name__ == 'AIMessage':
-#             if hasattr(msg, 'content'):
-#                 content = msg.content
+def extract_and_fix_slides(result):
+    """Extract slides and fetch images if missing"""
+    try:
+        if 'messages' not in result:
+            return []
+        
+        from langchain_core.messages import AIMessage
+        
+        ai_messages = [msg for msg in result['messages'] if isinstance(msg, AIMessage)]
+        
+        if not ai_messages:
+            print("No AI messages found in result")
+            return []
+        
+        slides = None
+        for msg in reversed(ai_messages):
+            try:
+                content = msg.content if hasattr(msg, 'content') else str(msg)
+                content = content.strip()
                 
-#                 # Try to parse JSON from content
-#                 try:
-#                     # Direct JSON parse
-#                     slides = json.loads(content)
-#                     if isinstance(slides, list):
-#                         return slides
-#                 except:
-#                     pass
+                if content.startswith('```'):
+                    lines = content.split('\n')
+                    content = '\n'.join(lines[1:-1]) if len(lines) > 2 else content
                 
-#                 # Try to extract JSON array
-#                 match = re.search(r'\[[\s\S]*\]', content)
-#                 if match:
-#                     try:
-#                         slides = json.loads(match.group(0))
-#                         if isinstance(slides, list):
-#                             return slides
-#                     except:
-#                         pass
-    
-#     # If no JSON found, construct slides from image URLs
-#     if image_urls:
-#         print(f"⚠️  Agent didn't return slide content. Creating basic structure with {len(image_urls)} images...")
-#         # We'll need to make a follow-up call or construct manually
-#         return None
-    
-#     return None
-
-# def create_presentation_with_retry(topic: str, slide_count: int = 5):
-#     """
-#     Generate presentation with better prompt and fallback logic.
-#     """
-#     print(f"🎯 Generating presentation on: {topic}")
-#     print("⏳ Step 1: Fetching images...")
-    
-#     # First, get the agent to fetch images
-#     result = generate_full_presentation(topic, slide_count)
-    
-#     # Extract image URLs from tool messages
-#     image_urls = []
-#     if isinstance(result, dict) and "messages" in result:
-#         for msg in result["messages"]:
-#             if hasattr(msg, '__class__') and msg.__class__.__name__ == 'ToolMessage':
-#                 if hasattr(msg, 'content'):
-#                     image_urls.append(msg.content)
-    
-#     print(f"✓ Fetched {len(image_urls)} images")
-    
-#     # Check if we got slide content
-#     slides = extract_slides_from_messages(result)
-    
-#     if slides and isinstance(slides, list) and len(slides) > 0:
-#         print(f"✓ Generated {len(slides)} slides with content")
-#         return slides
-    
-#     # Fallback: Make a direct LLM call to generate slide content
-#     print("⏳ Step 2: Generating slide content...")
-    
-#     prompt = f"""Create a {slide_count}-slide presentation on: {topic}
-
-# Return ONLY a JSON array with this exact structure (no markdown, no extra text):
-# [
-#   {{
-#     "title": "Introduction to AI",
-#     "bullets": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
-#     "img_query": "artificial intelligence technology"
-#   }},
-#   ...
-# ]
-
-# Generate exactly {slide_count} slides."""
-    
-#     from langchain_core.messages import HumanMessage
-#     response = kimi_llm.invoke([HumanMessage(content=prompt)])
-    
-#     try:
-#         content = response.content.strip()
+                parsed = json.loads(content)
+                
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    if 'title' in parsed[0]:
+                        slides = parsed
+                        break
+                elif isinstance(parsed, dict) and 'title' in parsed:
+                    slides = [parsed]
+                    break
+            except:
+                continue
         
-#         # Remove markdown code blocks
-#         if content.startswith("```"):
-#             content = re.sub(r'^```(?:json)?\s*\n?', '', content)
-#             content = re.sub(r'\n?```\s*$', '', content)
+        if not slides:
+            print("Could not find slide data in any AI message")
+            return []
         
-#         slides = json.loads(content.strip())
+        needs_images = any('img_query' in slide and 'image_url' not in slide for slide in slides)
         
-#         # Add image URLs to slides
-#         for i, slide in enumerate(slides):
-#             if i < len(image_urls):
-#                 slide["image_url"] = image_urls[i]
-#             else:
-#                 slide["image_url"] = None
+        if needs_images:
+            print("⚠️  Agent didn't fetch images. Fetching them now...")
+            for i, slide in enumerate(slides, 1):
+                if 'img_query' in slide:
+                    try:
+                        query = slide['img_query']
+                        print(f"  🔍 [{i}/{len(slides)}] Fetching: {query}")
+                        
+                        image_url = fetch_image_from_unsplash.invoke({"query": query})
+                        
+                        slide['image_url'] = image_url
+                        del slide['img_query']
+                        print(f"Success")
+                    except Exception as e:
+                        print(f"Failed: {e}")
+                        slide['image_url'] = None
+                        if 'img_query' in slide:
+                            del slide['img_query']
         
-#         print(f"✓ Generated {len(slides)} slides")
-#         return slides
+        return slides
         
-#     except Exception as e:
-#         print(f"❌ Error parsing slides: {e}")
-        
-#         # Last resort: create basic structure
-#         slides = []
-#         for i in range(min(slide_count, len(image_urls))):
-#             slides.append({
-#                 "title": f"Slide {i+1}: {topic}",
-#                 "bullets": [
-#                     "Key point 1",
-#                     "Key point 2", 
-#                     "Key point 3",
-#                     "Key point 4",
-#                     "Key point 5"
-#                 ],
-#                 "img_query": f"{topic} slide {i+1}",
-#                 "image_url": image_urls[i]
-#             })
-        
-#         return slides
-
-# def save_presentation_json(slides, filename="presentation.json"):
-#     """
-#     Save slides to JSON file.
-#     """
-#     with open(filename, "w", encoding="utf-8") as f:
-#         json.dump(slides, f, indent=2, ensure_ascii=False)
-    
-#     print(f"\n✓ Saved JSON → {filename}")
-#     return slides
-
-# if __name__ == "__main__":
-#     topic = "The Future of Artificial Intelligence"
-    
-#     slides = create_presentation_with_retry(topic, slide_count=5)
-    
-#     # Save and display
-#     save_presentation_json(slides, filename="presentation.json")
-    
-#     print("\n" + "="*60)
-#     print(f"📊 GENERATED {len(slides)} SLIDES")
-#     print("="*60)
-    
-#     for i, slide in enumerate(slides, 1):
-#         print(f"\n📄 Slide {i}: {slide.get('title', 'N/A')}")
-#         bullets = slide.get('bullets', [])
-#         for bullet in bullets:
-#             print(f"   • {bullet}")
-#         print(f"   🖼️  Image: {slide.get('image_url', 'N/A')[:80]}...")
+    except Exception as e:
+        print(f"Error processing slides: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
