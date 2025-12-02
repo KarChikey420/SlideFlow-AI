@@ -102,14 +102,14 @@ def extract_slides_from_result(result):
         return []
             
     except Exception as e:
-        print(f"❌ Error extracting slides: {e}")
+        print(f"Error extracting slides: {e}")
         return []
 
 
 if __name__ == "__main__":
     from generator import generate_full_presentation
     
-    print("🚀 Generating presentation...\n")
+    print("Generating presentation...\n")
     result = generate_full_presentation("AI in Healthcare", slide_count=5)
     
     print("\n" + "="*50)
