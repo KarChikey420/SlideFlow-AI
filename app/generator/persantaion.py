@@ -13,7 +13,7 @@ presentation_prompt = PromptTemplate(
         "Create exactly {slide_count} slides.\n\n"
         "For each slide, strictly follow this format:\n\n"
         "Slide X:\n"
-        "<title>\n"
+        "<title>\n" 
         "<bullet_point_1>\n"
         "<bullet_point_2>\n"
         "<bullet_point_3>\n"
@@ -36,6 +36,3 @@ def generate_presentation_content(topic: str, slide_count: int = 10) -> str:
         return f"Error generating presentation: {str(e)}"
 
 
-if __name__ == "__main__":
-    test = generate_presentation_content("AI in Healthcare", 3)
-    print(test)
