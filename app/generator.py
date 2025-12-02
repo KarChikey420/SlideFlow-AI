@@ -83,6 +83,6 @@ def save_presentation_json(result, filename="presentation.json"):
 
 if __name__ == "__main__":
     topic = "The Future of Artificial Intelligence"
-    presentation = generate_full_presentation(topic, slide_count=5)  
-    
-    print(presentation)
+    presentation = generate_full_presentation(topic, slide_count=5) 
+    save_presentation_json(presentation, filename="presentation.json") 
+
