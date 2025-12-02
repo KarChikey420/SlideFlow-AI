@@ -5,11 +5,9 @@ import requests
 import json
 
 def create_ppt_from_result(result, output_filename="presentation.pptx"):
-    # Try to get slides from the 'slides' key first (new format)
     if 'slides' in result:
         slides_data = result['slides']
     else:
-        # Fallback to extracting from messages
         slides_data = extract_slides_from_result(result)
     
     if not slides_data:
@@ -18,7 +16,6 @@ def create_ppt_from_result(result, output_filename="presentation.pptx"):
     
     print(f"📊 Creating presentation with {len(slides_data)} slides...")
     
-    # Create presentation
     prs = Presentation()
     prs.slide_width = Inches(10)
     prs.slide_height = Inches(7.5)
@@ -28,7 +25,6 @@ def create_ppt_from_result(result, output_filename="presentation.pptx"):
         
         slide = prs.slides.add_slide(prs.slide_layouts[6])  
         
-        # Add title
         title_box = slide.shapes.add_textbox(
             Inches(0.5), Inches(0.3), Inches(9), Inches(0.8)
         )
@@ -37,7 +33,6 @@ def create_ppt_from_result(result, output_filename="presentation.pptx"):
         title_frame.paragraphs[0].font.size = Pt(32)
         title_frame.paragraphs[0].font.bold = True
         
-        # Add bullets
         text_box = slide.shapes.add_textbox(
             Inches(0.5), Inches(1.5), Inches(4.5), Inches(5)
         )
@@ -50,7 +45,6 @@ def create_ppt_from_result(result, output_filename="presentation.pptx"):
             p.level = 0
             p.font.size = Pt(18)
         
-        # Add image
         if 'image_url' in slide_data and slide_data['image_url']:
             try:
                 print(f"    🖼️  Adding image...")
@@ -62,14 +56,14 @@ def create_ppt_from_result(result, output_filename="presentation.pptx"):
                     Inches(5.5), Inches(1.5), 
                     width=Inches(4), height=Inches(5)
                 )
-                print(f"    ✅ Image added")
+                print(f"Image added")
             except Exception as e:
-                print(f"    ⚠️  Could not add image: {e}")
+                print(f"Could not add image: {e}")
         else:
-            print(f"    ⚠️  No image URL found for this slide")
+            print(f"No image URL found for this slide")
     
     prs.save(output_filename)
-    print(f"\n✅ Presentation saved as {output_filename}")
+    print(f"\nPresentation saved as {output_filename}")
 
 
 def extract_slides_from_result(result):
@@ -80,27 +74,23 @@ def extract_slides_from_result(result):
         if 'messages' not in result:
             return []
         
-        # Find all AI messages
         from langchain_core.messages import AIMessage
         ai_messages = [msg for msg in result['messages'] if isinstance(msg, AIMessage)]
         
         if not ai_messages:
             return []
         
-        # Try to find slides in AI messages (reverse order)
         for msg in reversed(ai_messages):
             try:
                 content = msg.content if hasattr(msg, 'content') else str(msg)
                 content = content.strip()
                 
-                # Remove markdown code blocks
                 if content.startswith('```'):
                     lines = content.split('\n')
                     content = '\n'.join(lines[1:-1]) if len(lines) > 2 else content
                 
                 slides = json.loads(content)
                 
-                # Validate it's slide data
                 if isinstance(slides, list) and len(slides) > 0:
                     if 'title' in slides[0]:
                         return slides
@@ -117,10 +107,8 @@ def extract_slides_from_result(result):
 
 
 if __name__ == "__main__":
-    # Import generator function
     from generator import generate_full_presentation
     
-    # Generate presentation
     print("🚀 Generating presentation...\n")
     result = generate_full_presentation("AI in Healthcare", slide_count=5)
     
@@ -129,15 +117,11 @@ if __name__ == "__main__":
     print("="*50)
     print("Result keys:", result.keys())
     print("\nNumber of messages:", len(result['messages']))
-    
-    # Show all message types
     print("\nMessage types:")
     for i, msg in enumerate(result['messages']):
         print(f"  {i}: {type(msg).__name__}")
     
     if 'slides' in result:
-        print(f"\n✅ Found {len(result['slides'])} slides in result['slides']")
+        print(f"\nFound {len(result['slides'])} slides in result['slides']")
     print("="*50 + "\n")
-    
-    # Create PowerPoint
     create_ppt_from_result(result, "ai_healthcare_presentation.pptx")
