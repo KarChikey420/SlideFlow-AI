@@ -1,5 +1,6 @@
 from kimi import kimi_llm
 from unplash import fetch_image_from_unsplash
+import json
 
 try:
     from langchain.agents import create_react_agent
@@ -37,7 +38,51 @@ def generate_full_presentation(topic: str, slide_count: int = 10):
     
     return result
 
+def save_presentation_json(result, filename="presentation.json"):
+    """
+    Extract JSON list from agent response and save it cleanly.
+    """
+
+    # LangChain may return dict, string, or structured output
+    # We try to normalize it.
+
+    if isinstance(result, list):
+        slides = result
+
+    elif isinstance(result, dict):
+
+        # look for common keys
+        for key in ["output", "text", "result", "response"]:
+            if key in result and isinstance(result[key], str):
+                try:
+                    slides = json.loads(result[key])
+                    break
+                except:
+                    continue
+        else:
+            slides = result  # assume it is already JSON-like
+
+    elif isinstance(result, str):
+        try:
+            slides = json.loads(result)
+        except:
+            # strip loose text around JSON
+            import re
+            m = re.search(r"(\[.*\])", result, re.S)
+            slides = json.loads(m.group(1)) if m else {"raw": result}
+
+    else:
+        slides = {"raw": str(result)}
+
+    # Save file
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(slides, f, indent=2, ensure_ascii=False)
+
+    print(f"Saved JSON → {filename}")
+    return filename
+
 if __name__ == "__main__":
     topic = "The Future of Artificial Intelligence"
     presentation = generate_full_presentation(topic, slide_count=5)  
+    
     print(presentation)
