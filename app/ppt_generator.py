@@ -11,17 +11,17 @@ def create_ppt_from_result(result, output_filename="presentation.pptx"):
         slides_data = extract_slides_from_result(result)
     
     if not slides_data:
-        print("❌ No slides data found!")
+        print("No slides data found!")
         return
     
-    print(f"📊 Creating presentation with {len(slides_data)} slides...")
+    print(f" Creating presentation with {len(slides_data)} slides...")
     
     prs = Presentation()
     prs.slide_width = Inches(10)
     prs.slide_height = Inches(7.5)
     
     for i, slide_data in enumerate(slides_data, 1):
-        print(f"  📄 Adding slide {i}: {slide_data.get('title', 'Untitled')}")
+        print(f" Adding slide {i}: {slide_data.get('title', 'Untitled')}")
         
         slide = prs.slides.add_slide(prs.slide_layouts[6])  
         
@@ -47,7 +47,7 @@ def create_ppt_from_result(result, output_filename="presentation.pptx"):
         
         if 'image_url' in slide_data and slide_data['image_url']:
             try:
-                print(f"    🖼️  Adding image...")
+                print(f"Adding image...")
                 response = requests.get(slide_data['image_url'], timeout=10)
                 response.raise_for_status()
                 img_stream = BytesIO(response.content)
