@@ -112,11 +112,3 @@ def create_presentation(topic: str, slide_count: int = 10):
 
     return final_slides
 
-if __name__ == "__main__":
-    topic = "Artificial Intelligence in Healthcare"
-
-    slides = create_presentation(topic, slide_count=10)
-
-    print("\nFinal Slides with Images:\n")
-    for slide in slides:
-        print(json.dumps(slide, indent=4), "\n")
