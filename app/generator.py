@@ -1,33 +1,79 @@
+import json
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableSequence
-from langchain_core.messages import ToolMessage, AIMessage
+from langchain_core.messages import AIMessage, ToolMessage
+
 from llm import llm
 from unplash import fetch_image_from_unsplash
 
+
+slide_prompt = ChatPromptTemplate.from_template("""
+You are an expert presentation designer.
+
+Create a presentation outline on the topic: "{topic}"
+
+Generate exactly {slide_count} slides.
+
+Return ONLY valid JSON: a list of objects.
+
+Each slide should look like:
+
+{{
+  "title": "...",
+  "content": "...",
+  "image_query": "..."
+}}
+
+Rules:
+- Title must be short.
+- Content must be 5 bullet points.
+- image_query = short phrase ideal for Unsplash.
+- No markdown.
+- No explanations.
+""")
+
+slide_chain = RunnableSequence(slide_prompt, llm)
+
+
+def generate_slides(topic: str, slide_count: int = 10):
+    """Generates slide blueprint with titles, text, and image query."""
+
+    result = slide_chain.invoke({
+        "topic": topic,
+        "slide_count": slide_count
+    })
+
+    try:
+        slides = json.loads(result.content)
+    except Exception:
+        raise ValueError("LLM did not return valid JSON:\n" + result.content)
+
+    return slides
+
 llm_with_tools = llm.bind_tools([fetch_image_from_unsplash])
 
-prompt = ChatPromptTemplate.from_messages(
+image_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are a helpful assistant."),
+        ("system", "You generate image URLs based on given search queries."),
         MessagesPlaceholder("messages"),
     ]
 )
 
-agent = RunnableSequence(prompt, llm_with_tools)
+image_agent = RunnableSequence(image_prompt, llm_with_tools)
+
 
 def execute_tool(tool_call):
+    """Run the actual tool."""
     if tool_call["name"] == "fetch_image_from_unsplash":
         return fetch_image_from_unsplash.run(tool_call["args"]["query"])
 
 
-if __name__ == "__main__":
-    user_input = "Describe a serene mountain lake at sunrise and show me a matching image."
+def get_image_url(query: str):
+    """Fetches image URL using tool calling agent."""
 
-    messages = [
-        ("human", user_input)
-    ]
+    messages = [("human", f"Fetch an image for: {query}")]
 
-    response1 = agent.invoke({"messages": messages})
+    response1 = image_agent.invoke({"messages": messages})
 
     ai_msg = AIMessage(
         content=response1.content,
@@ -44,12 +90,33 @@ if __name__ == "__main__":
                 content=str(result),
                 tool_call_id=call["id"]
             )
-
             messages.append(tool_msg)
 
-        response2 = agent.invoke({"messages": messages})
+        response2 = image_agent.invoke({"messages": messages})
 
-        print("\nFinal Output:\n", response2)
+        return result 
 
-    else:
-        print("\nFinal Output:\n", response1)
+    return None
+
+def create_presentation(topic: str, slide_count: int = 10):
+    slides = generate_slides(topic, slide_count)
+
+    final_slides = []
+
+    for slide in slides:
+        image_query = slide.get("image_query", "")
+        image_url = get_image_url(image_query)
+
+        slide["image_url"] = image_url
+        final_slides.append(slide)
+
+    return final_slides
+
+if __name__ == "__main__":
+    topic = "Artificial Intelligence in Healthcare"
+
+    slides = create_presentation(topic, slide_count=10)
+
+    print("\nFinal Slides with Images:\n")
+    for slide in slides:
+        print(json.dumps(slide, indent=4), "\n")
