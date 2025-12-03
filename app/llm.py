@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_API_KEY = os.getenv("API_KEY")
 if not OPENROUTER_API_KEY:
     raise ValueError("Missing OPENROUTER_API_KEY in .env")
 
