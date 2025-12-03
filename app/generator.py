@@ -1,50 +1,96 @@
 from kimi import kimi_llm
 from unplash import fetch_image_from_unsplash
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.tools import tool
-from langchain_core.prompts import ChatPromptTemplate
 import json
-
-@tool
-def fetch_image(query: str) -> str:
-    """Fetches an image from Unsplash based on a search query."""
-    return fetch_image_from_unsplash(query)
-
-tools = [fetch_image]
-
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful assistant."),
-    ("human", "{input}"),
-    ("placeholder", "{agent_scratchpad}"),
-])
-
-agent = create_tool_calling_agent(kimi_llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+import re
 
 def generate_full_presentation(topic: str, slide_count: int = 10):
-    prompt_text = f"""
+    """Generate a complete presentation with slides and images."""
+    
+    prompt = f"""
 You are a slide presentation generator.
 
 Create a {slide_count}-slide presentation on the topic: "{topic}".
 
 For each slide return:
-- slide_number
-- title
-- content (3–5 bullet points)
-- image_query (short keyword)
+- slide_number (integer)
+- title (string)
+- content (array of 3-5 bullet points)
+- image_query (short keyword for image search)
 
-Output the result ONLY in valid JSON array format.
-Without explanation.
+Output the result ONLY in valid JSON array format like this:
+[
+  {{
+    "slide_number": 1,
+    "title": "",
+    "content": [],
+    "image_query": ""
+  }}
+]
+
+Do not include any explanation, preamble, or markdown formatting. Just the JSON array.
 """
 
-    response = agent_executor.invoke({"input": prompt_text})
     try:
-        slides = json.loads(response["output"])
+        print(f"Generating {slide_count} slides on '{topic}'...")
+        response = kimi_llm.invoke(prompt)
+        
+        if hasattr(response, 'content'):
+            content = response.content
+        elif isinstance(response, dict) and 'content' in response:
+            content = response['content']
+        else:
+            content = str(response)
+        
+        print("LLM response received, parsing...")
+        
+        content = re.sub(r'```json\s*', '', content)
+        content = re.sub(r'```\s*', '', content)
+        content = content.strip()
+        
+        slides = json.loads(content)
+        print(f"Successfully parsed {len(slides)} slides")
+        
+        print("\nFetching images from Unsplash...")
+        for i, slide in enumerate(slides, 1):
+            if 'image_query' in slide:
+                try:
+                    print(f"  [{i}/{len(slides)}] Fetching: '{slide['image_query']}'")
+                    slide['image_url'] = fetch_image_from_unsplash(slide['image_query'])
+                    print(f"Success")
+                except Exception as img_error:
+                    slide['image_url'] = None
+                    print(f"Failed: {img_error}")
+        
         return slides
+        
+    except json.JSONDecodeError as e:
+        print(f"\n❌ JSON parsing error: {e}")
+        print(f"Content received:\n{content if 'content' in locals() else 'N/A'}")
+        return {
+            "error": f"JSON parsing failed: {str(e)}", 
+            "raw": content if 'content' in locals() else "No content"
+        }
     except Exception as e:
-        return {"error": f"Failed to parse JSON: {str(e)}", "raw": response["output"]}
+        print(f"\nError: {e}")
+        return {
+            "error": f"Generation failed: {str(e)}", 
+            "raw": str(e)
+        }
 
 if __name__ == "__main__":
     topic = "ai in health care"
-    result = generate_full_presentation(topic, 5)
-    print(json.dumps(result, indent=2))
+    print("="*60)
+    print(f"PRESENTATION GENERATOR")
+    print("="*60)
+    
+    result = generate_full_presentation(topic, 10)
+    
+    print("\n" + "="*60)
+    if "error" in result:
+        print("❌ ERROR OCCURRED")
+        print("="*60)
+        print(json.dumps(result, indent=2))
+    else:
+        print("✓ PRESENTATION GENERATED SUCCESSFULLY")
+        print("="*60)
+        print(json.dumps(result, indent=2))
