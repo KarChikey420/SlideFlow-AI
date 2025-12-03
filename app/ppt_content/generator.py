@@ -2,7 +2,6 @@ import json
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableSequence
 from langchain_core.messages import AIMessage, ToolMessage
-
 from llm import llm
 from unplash import fetch_image_from_unsplash
 
