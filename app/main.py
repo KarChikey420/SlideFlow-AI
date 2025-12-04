@@ -1,5 +1,6 @@
 from fastapi import FastAPI,Depends,HTTPException
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import hashlib
 import uuid 
@@ -10,6 +11,14 @@ from app.ppt_content.pptx_file import create_ppt
 import uvicorn
 
 app=FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
@@ -29,6 +38,10 @@ class LoginRequest(BaseModel):
 class GeneratePPTRequest(BaseModel):
     topic: str
     slide: int = 10
+
+@app.options("/{path:path}")
+def options_handler(path: str):
+    return {"message": "OK"}
 
 @app.post("/signup")
 def signup(request: SignupRequest):
