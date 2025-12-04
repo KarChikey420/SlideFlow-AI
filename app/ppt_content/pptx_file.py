@@ -96,5 +96,5 @@ def create_ppt(slides_data, output_path="presentation.pptx", topic="AI Presentat
                     pass
 
     prs.save(output_path)
-    print(f"\nPPT saved successfully: {output_path}")
+    
 
