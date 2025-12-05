@@ -9,9 +9,9 @@ if not OPENROUTER_API_KEY:
     raise ValueError("Missing OPENROUTER_API_KEY in .env")
 
 llm = ChatOpenAI(
-    model="openai/gpt-4o",  
+    model="openai/gpt-3.5-turbo",  
     api_key=OPENROUTER_API_KEY,
     base_url="https://openrouter.ai/api/v1",
     temperature=0.7,
-    max_tokens=1400,
+    max_tokens=800,
 )
