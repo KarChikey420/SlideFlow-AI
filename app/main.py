@@ -76,7 +76,7 @@ def login(request: LoginRequest):
 def generate_pptx(request: GeneratePPTRequest, current_user:str= Depends(current_user)):
     slides=create_presentation(request.topic,request.slide)
     filename=f"{request.topic.replace(' ','_')}_{uuid.uuid4().hex}.pptx"
-    create_ppt(slides,filename)
+    create_ppt(slides,filename,request.topic)
     
     return FileResponse(filename, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", filename=filename)
         

@@ -5,17 +5,17 @@ from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
 def download_image(url, save_path):
-    if not url:
+    if not url or not isinstance(url, str) or not url.startswith('http'):
         return None
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
-        r = requests.get(url, timeout=10, headers=headers)
+        r = requests.get(url, timeout=15, headers=headers)
         r.raise_for_status()
         with open(save_path, "wb") as f:
             f.write(r.content)
         return save_path
     except Exception as e:
-        print(f"Error downloading {url}: {e}")
+        print(f"Error downloading image: {e}")
         return None
 
 def create_ppt(slides_data, output_path="presentation.pptx", topic="AI Presentation"):
@@ -27,7 +27,8 @@ def create_ppt(slides_data, output_path="presentation.pptx", topic="AI Presentat
     title_slide_layout = prs.slide_layouts[0]
     slide = prs.slides.add_slide(title_slide_layout)
     slide.shapes.title.text = topic
-    slide.placeholders[1].text = "Auto-generated Presentation"
+    if len(slide.placeholders) > 1:
+        slide.placeholders[1].text = ""
 
     for i, slide_info in enumerate(slides_data):
         title_text = slide_info.get("title", "Slide Title")

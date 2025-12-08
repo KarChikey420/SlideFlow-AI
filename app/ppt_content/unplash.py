@@ -15,11 +15,12 @@ def fetch_image_from_unsplash(query: str) -> str:
     try:
         url = f"https://api.unsplash.com/search/photos?query={query}&client_id={UNSPLASH_ACCESS_KEY}&per_page=1"
         headers = {"User-Agent": "LangChain-App/1.0"}
-        response = requests.get(url, headers=headers, timeout=8)
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         data = response.json()
         if data.get("results"):
             return data["results"][0]["urls"]["regular"]
-        return "No relevant image found on Unsplash."
+        return None
     except Exception as e:
-        return f"Error fetching image: {str(e)}"
+        print(f"Unsplash error: {e}")
+        return None
