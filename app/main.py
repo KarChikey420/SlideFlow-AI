@@ -4,10 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import hashlib
 import uuid 
-from app.backend.database import SessionLocal,User
-from app.backend.auth import create_access_token,current_user
-from app.ppt_content.generator import create_presentation
-from app.ppt_content.pptx_file import create_ppt
+from backend.database import SessionLocal,User
+from backend.auth import create_access_token,current_user
+from ppt_content.generator import create_presentation
+from ppt_content.pptx_file import create_ppt
 import uvicorn
 
 app=FastAPI()
