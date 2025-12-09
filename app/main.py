@@ -88,12 +88,12 @@ def generate_pptx(request: GeneratePPTRequest, current_user:str= Depends(current
     filename=f"{safe_topic}_{uuid.uuid4().hex}.pptx"
     create_ppt(slides,filename,request.topic)
     
-    try:
-        return FileResponse(filename, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", filename=filename)
-    finally:
-        if os.path.exists(filename):
-            os.remove(filename)
-        
-        
+    return FileResponse(
+        filename, 
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
+        filename=filename,
+        background=lambda: os.remove(filename) if os.path.exists(filename) else None
+    )
+            
 if __name__=="__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

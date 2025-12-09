@@ -4,14 +4,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENROUTER_API_KEY = os.getenv("API_KEY")
+OPENROUTER_API_KEY = os.getenv("GROQ_KEY")
 if not OPENROUTER_API_KEY:
     raise ValueError("Missing OPENROUTER_API_KEY in .env")
 
 llm = ChatOpenAI(
-    model="openai/gpt-3.5-turbo",  
+    model="llama-3.3-70b-versatile",  
     api_key=OPENROUTER_API_KEY,
-    base_url="https://openrouter.ai/api/v1",
+    base_url="https://api.groq.com/openai/v1",
     temperature=0.7,
     max_tokens=800,
 )
+
+print(llm.invoke("Hello"))
