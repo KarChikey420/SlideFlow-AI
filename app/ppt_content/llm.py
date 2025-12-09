@@ -15,5 +15,3 @@ llm = ChatOpenAI(
     temperature=0.7,
     max_tokens=800,
 )
-
-print(llm.invoke("Hello"))
