@@ -81,7 +81,7 @@ def get_image_url(query: str):
     messages.append(ai_msg)
 
     if response1.tool_calls:
-
+        result = None
         for call in response1.tool_calls:
             result = execute_tool(call)
 
@@ -90,8 +90,6 @@ def get_image_url(query: str):
                 tool_call_id=call["id"]
             )
             messages.append(tool_msg)
-
-        response2 = image_agent.invoke({"messages": messages})
 
         return result 
 
