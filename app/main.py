@@ -66,6 +66,9 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(404, "User not found")
 
+    print(f"Input password hash: {hash_password(request.password)}")
+    print(f"Stored password hash: {user.password}")
+    
     if not verify_password(request.password, user.password):
         raise HTTPException(401, "Wrong password")
 
