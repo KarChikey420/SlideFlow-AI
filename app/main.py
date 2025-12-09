@@ -1,11 +1,10 @@
 from fastapi import FastAPI,Depends,HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import bcrypt
+from sqlalchemy.orm import Session
+import hashlib
 import uuid 
-import os
 from backend.database import SessionLocal,User
 from backend.auth import create_access_token,current_user
 from ppt_content.generator import create_presentation
@@ -13,31 +12,31 @@ from ppt_content.pptx_file import create_ppt
 import uvicorn
 
 app=FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://localhost:8080",
-        "https://slideflow-ai.onrender.com",
-        "*"
+        "https://slideflow-ai.onrender.com"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
-    )
+)
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-        
+
+
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
+    return hashlib.sha256(password.encode()).hexdigest() == hashed
 
 class SignupRequest(BaseModel):
     name: str
@@ -81,19 +80,15 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     token = create_access_token({"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
-@app.post("/generate_pptx")
+@app.post("/generate_ppx")
 def generate_pptx(request: GeneratePPTRequest, current_user:str= Depends(current_user)):
     slides=create_presentation(request.topic,request.slide)
-    safe_topic = "".join(c for c in request.topic if c.isalnum() or c in (' ', '_')).replace(' ','_')
-    filename=f"{safe_topic}_{uuid.uuid4().hex}.pptx"
+    filename=f"{request.topic.replace(' ','_')}_{uuid.uuid4().hex}.pptx"
     create_ppt(slides,filename,request.topic)
     
-    return FileResponse(
-        filename, 
-        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
-        filename=filename,
-        background=lambda: os.remove(filename) if os.path.exists(filename) else None
-    )
-            
+    return FileResponse(filename, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", filename=filename)
+        
+        
 if __name__=="__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
+    
