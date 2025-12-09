@@ -51,10 +51,6 @@ class GeneratePPTRequest(BaseModel):
     topic: str
     slide: int = 10
 
-@app.options("/{path:path}")
-def options_handler(path: str):
-    return {"message": "OK"}
-
 @app.post("/signup")
 def signup(request: SignupRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.email).first()
