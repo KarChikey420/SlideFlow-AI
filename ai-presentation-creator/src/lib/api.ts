@@ -19,7 +19,7 @@ export const login = async (email: string, password: string) => {
 };
 
 export const generatePPT = async (topic: string, slide: number, token: string) => {
-  const res = await fetch(`${API_URL}/generate_ppx`, {
+  const res = await fetch(`${API_URL}/generate_pptx`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
