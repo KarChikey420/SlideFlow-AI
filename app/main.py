@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-import hashlib
+import bcrypt
 import uuid 
 from backend.database import SessionLocal,User
 from backend.auth import create_access_token,current_user
@@ -29,10 +29,10 @@ def get_db():
 
 
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 def verify_password(password: str, hashed: str) -> bool:
-    return hashlib.sha256(password.encode()).hexdigest() == hashed
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 class SignupRequest(BaseModel):
     name: str
@@ -66,23 +66,23 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(404, "User not found")
 
-    print(f"Input password hash: {hash_password(request.password)}")
-    print(f"Stored password hash: {user.password}")
-    
     if not verify_password(request.password, user.password):
         raise HTTPException(401, "Wrong password")
 
     token = create_access_token({"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
-@app.post("/generate_ppx")
+@app.post("/generate_pptx")
 def generate_pptx(request: GeneratePPTRequest, current_user:str= Depends(current_user)):
+ try:
     slides=create_presentation(request.topic,request.slide)
     filename=f"{request.topic.replace(' ','_')}_{uuid.uuid4().hex}.pptx"
+    
     create_ppt(slides,filename,request.topic)
     
     return FileResponse(filename, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", filename=filename)
-        
+ except Exception as e:
+    raise HTTPException(500, f"Failed to generate presentation: {e}")  
         
 if __name__=="__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
